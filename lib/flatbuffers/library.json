@@ -1,0 +1,11 @@
+{
+    "name": "flatbuffers",
+    "version": "2.0.0",
+    "build": {
+        "srcFilter": [
+            "-<*>",
+            "+<src/flatbuffers.cpp>"
+        ],
+        "includeDir": "include"
+    }
+}

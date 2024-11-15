@@ -1,0 +1,62 @@
+Import("env")
+import os
+import glob
+
+# Define color codes for console output
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    OKYELLOW = '\033[93m'
+    OKRED = '\033[91m'
+    ENDC = '\033[0m'    # Resets the color
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+def generate_flatbuffers(source, target, env):
+    print(f"{bcolors.OKCYAN}{'=' * 60}{bcolors.ENDC}")
+    print(f"{bcolors.BOLD}{bcolors.OKCYAN}Starting FlatBuffers Code Generation...{bcolors.ENDC}")
+    print(f"{bcolors.OKCYAN}{'=' * 60}{bcolors.ENDC}\n")
+    
+    # Paths
+    schema_dir = os.path.join(env['PROJECT_DIR'], 'schema')
+    include_dir = os.path.join(env['PROJECT_DIR'], 'include')
+    
+    # Ensure the include directory exists
+    os.makedirs(include_dir, exist_ok=True)
+    
+    # Find all .fbs files in the schema directory
+    fbs_files = glob.glob(os.path.join(schema_dir, '*.fbs'))
+    
+    if not fbs_files:
+        print(f"{bcolors.WARNING}No .fbs files found in {schema_dir}.{bcolors.ENDC}")
+    else:
+        # Generate code for each .fbs file
+        for fbs_file in fbs_files:
+            cmd = f"flatc --cpp -o {include_dir} {fbs_file}"
+            print(f"{bcolors.OKGREEN}Executing: {cmd}{bcolors.ENDC}")
+            result = env.Execute(cmd)
+            if result != 0:
+                print(f"{bcolors.FAIL}Error executing command: {cmd}{bcolors.ENDC}")
+                env.Exit(1)
+    
+    print(f"\n{bcolors.OKCYAN}FlatBuffers code generation completed.{bcolors.ENDC}")
+    
+    # Fancy finished build section
+    print(f"{bcolors.OKBLUE}{'=' * 60}{bcolors.ENDC}")
+    print(f"{bcolors.BOLD}{bcolors.OKGREEN}Success: Build Completed!{bcolors.ENDC}")
+    print(f"{bcolors.OKBLUE}{'=' * 60}{bcolors.ENDC}\n")
+    print(f"{bcolors.OKGREEN}")
+    print(r"""
+ ______   ______     ______     __   __     ______    
+/\  ___\ /\  == \   /\  __ \   /\ "-.\ \   /\  ___\   
+\ \  __\ \ \  __<   \ \  __ \  \ \ \-.  \  \ \ \____  
+ \ \_\    \ \_\ \_\  \ \_\ \_\  \ \_\\"\_\  \ \_____\ 
+  \/_/     \/_/ /_/   \/_/\/_/   \/_/ \/_/   \/_____/ 
+                                                      
+    """)
+    # print(f"{bcolors.ENDC}")
+
+# Add the generate_flatbuffers function as a pre-action before building the program
+env.AddPreAction("buildprog", generate_flatbuffers)
