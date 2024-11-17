@@ -36,3 +36,9 @@ String RTCSensor::getData() const
 {
     return sensorData_;
 }
+
+unsigned long RTCSensor::getUpdateInterval() const
+{
+    return 2; // Approximately 500 Hz (1000 ms / 500 ≈ 2 ms)
+    // Adjust as needed based on actual capability and performance
+}

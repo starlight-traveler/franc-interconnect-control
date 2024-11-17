@@ -14,6 +14,7 @@ public:
     void update() override;
     String getName() const override;
     String getData() const override;
+    unsigned long getUpdateInterval() const override; // Implemented
 
 private:
     RTC_DS3231 rtc_;

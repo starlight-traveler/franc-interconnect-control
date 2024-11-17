@@ -14,9 +14,13 @@ public:
     void update() override;
     String getName() const override;
     String getData() const override;
+    void setOversampleRate(uint8_t oversampleRate);
+    unsigned long getUpdateInterval() const override; // Implemented
 
 private:
     Adafruit_MPL3115A2 mpl;
+    uint8_t oversampleRate;
+    unsigned long lastUpdateTime;
     String data;
 };
 
