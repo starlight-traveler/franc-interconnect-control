@@ -1,23 +1,19 @@
 // MPLAltimeterSensor.cpp
 #include "mpl_altimeter.h"
 
-MPLAltimeterSensor::MPLAltimeterSensor() : mpl() {}
+MPLAltimeterSensor::MPLAltimeterSensor() : mpl(), newDataFlag_(false), lastUpdateTime(0) {}
 
 bool MPLAltimeterSensor::begin()
 {
     Wire.begin();
     if (!mpl.begin())
     {
-        Serial.println("MPL3115A2 initialization failed!");
         return false;
     }
 
     setOversampleRate(MPL3115A2_CTRL_REG1_OS1);
-    Serial.println("MPL3115A2 initialized.");
     mpl.setMode();
-    
     return true;
-
 }
 
 void MPLAltimeterSensor::setOversampleRate(uint8_t oversampleRate)
@@ -33,14 +29,18 @@ void MPLAltimeterSensor::setOversampleRate(uint8_t oversampleRate)
 
 void MPLAltimeterSensor::update()
 {
-    // Implement timing check
     unsigned long currentTime = millis();
     unsigned long desiredInterval = getUpdateInterval();
     if (currentTime - lastUpdateTime >= desiredInterval)
     {
-        float pressure = mpl.getPressure();
-        float altitude = mpl.getAltitude();
-        data = "Pressure: " + String(pressure) + " Pa, Altitude: " + String(altitude) + " m";
+        // Retrieve data from the sensor
+        data_.pressure = mpl.getPressure(); // Populate pressure in Pa
+        data_.altitude = mpl.getAltitude(); // Populate altitude in meters
+
+        // Set new data flag
+        newDataFlag_ = true;
+
+        // Update the last update time
         lastUpdateTime = currentTime;
     }
 }
@@ -52,10 +52,29 @@ String MPLAltimeterSensor::getName() const
 
 String MPLAltimeterSensor::getData() const
 {
-    return data;
+    // Optionally convert struct data to a readable string
+    return "Pressure: " + String(data_.pressure) + " Pa, Altitude: " + String(data_.altitude) + " m";
 }
 
 unsigned long MPLAltimeterSensor::getUpdateInterval() const
 {
     return 40; // Approximately 30 Hz (1000 ms / 30 ≈ 33 ms)
+}
+
+bool MPLAltimeterSensor::hasNewData() const
+{
+    return newDataFlag_;
+}
+
+void MPLAltimeterSensor::resetNewDataFlag()
+{
+    newDataFlag_ = false;
+}
+
+void MPLAltimeterSensor::getData(void *data) const
+{
+    if (data)
+    {
+        memcpy(data, &data_, sizeof(MPLAltimeterDataStruct));
+    }
 }

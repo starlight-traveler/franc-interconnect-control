@@ -3,9 +3,10 @@
 #define MPL_ALTIMETER_SENSOR_H
 
 #include "sensor.h"
+#include "sensor_struct.h"
+
 #include <Wire.h>
 #include <Adafruit_MPL3115A2.h>
-
 class MPLAltimeterSensor : public Sensor
 {
 public:
@@ -14,14 +15,19 @@ public:
     void update() override;
     String getName() const override;
     String getData() const override;
+    unsigned long getUpdateInterval() const override;
+
+    bool hasNewData() const override;        // Indicates if there's new data available
+    void resetNewDataFlag() override;        // Resets the new data flag
+    void getData(void *data) const; // Retrieves the populated struct
+
     void setOversampleRate(uint8_t oversampleRate);
-    unsigned long getUpdateInterval() const override; // Implemented
 
 private:
-    Adafruit_MPL3115A2 mpl;
-    uint8_t oversampleRate;
-    unsigned long lastUpdateTime;
-    String data;
+    Adafruit_MPL3115A2 mpl;       // MPL3115A2 sensor object
+    MPLAltimeterDataStruct data_; // Struct to hold sensor data
+    bool newDataFlag_;            // Tracks if new data is available
+    unsigned long lastUpdateTime; // Tracks the last update time
 };
 
 #endif // MPL_ALTIMETER_SENSOR_H

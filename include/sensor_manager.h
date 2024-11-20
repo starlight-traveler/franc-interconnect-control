@@ -2,31 +2,43 @@
 #ifndef SENSOR_MANAGER_H
 #define SENSOR_MANAGER_H
 
-#include "sensor.h"
-#include <vector>
+#include <Arduino.h>
 #include <memory>
+#include <vector>
+#include "Sensor.h"
+#include "SDLogger.h"
+#include "sensor.h"
+#include "flatbuffers/flatbuffers.h"
+#include "sensors_generated.h"
+#include "sensor_struct.h"
+
+#define CALC_INTERVAL_MS 1000 // 1-second interval for update rate calculation
 
 class SensorManager
 {
 public:
-    SensorManager();
+    SensorManager(uint8_t sdChipSelectPin);
     bool beginAll();
     void updateAll();
-    void updateAllWithHz();
+    void logAllData();
     void printAllData() const;
-
     void addSensor(std::shared_ptr<Sensor> sensor);
     float getUpdateRateHz() const;
 
 private:
     std::vector<std::shared_ptr<Sensor>> sensors;
-    // Variables for update rate calculation
-    unsigned long lastUpdateTime_; // Time of the last update rate calculation
-    unsigned int updateCount_;     // Number of updates since last calculation
-    float updateRateHz_;           // Calculated update rate in Hz
+    unsigned long lastUpdateTime_;
+    unsigned long updateCount_;
+    float updateRateHz_;
+    SDLogger sdLogger_;
+    flatbuffers::FlatBufferBuilder builder_;
 
-    static const unsigned long CALC_INTERVAL_MS = 1000; // Calculation interval (e.g., 1000ms = 1s)
-
+    // Latest data from each sensor
+    BME688DataStruct latestBME688_;
+    ENS160DataStruct latestENS160_;
+    LSM6D032DataStruct latestLSM6D032_;
+    MPLAltimeterDataStruct latestMPLAltimeter_;
+    BNO055DataStruct latestBNO055_;
 };
 
 #endif // SENSOR_MANAGER_H

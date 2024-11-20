@@ -8,11 +8,11 @@ bool LSM6D032Sensor::begin()
     Wire.begin();
     if (!lsm.begin_I2C())
     {
-        Serial.println("LSM6D032 initialization failed!");
+        // Serial.println("LSM6D032 initialization failed!");
         return false;
     }
 
-    Serial.println("LSM6D032 initialized.");
+    // Serial.println("LSM6D032 initialized.");
     lsm.setAccelRange(LSM6DSO32_ACCEL_RANGE_32_G);
     lsm.setGyroRange(LSM6DS_GYRO_RANGE_2000_DPS);
     lsm.setAccelDataRate(LSM6DS_RATE_6_66K_HZ);
