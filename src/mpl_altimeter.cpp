@@ -45,6 +45,24 @@ void MPLAltimeterSensor::update()
     }
 }
 
+flatbuffers::Offset<SensorLog::SensorMessage> MPLAltimeterSensor::serialize(flatbuffers::FlatBufferBuilder &builder, unsigned long timestamp) const
+{
+    // Create FlatBuffers MPLAltimeterData from the struct
+    auto mplData = SensorLog::CreateMPLAltimeterData(builder, data_.pressure, data_.altitude);
+
+    // Get the union offset
+    auto dataOffset = mplData.Union();
+
+    // Create the SensorMessage FlatBuffers object
+    return SensorLog::CreateSensorMessage(
+        builder,
+        SensorLog::SensorType_MPLAltimeter,          // sensor_type
+        timestamp,                                   // timestamp
+        SensorLog::SensorDataUnion_MPLAltimeterData, // data_type (union type)
+        dataOffset                                   // data (union data)
+    );
+}
+
 String MPLAltimeterSensor::getName() const
 {
     return "MPL3115A2";

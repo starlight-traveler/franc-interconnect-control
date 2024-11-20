@@ -31,8 +31,8 @@ void setup()
   // sensorManager.addSensor(bno085);
 
   // BNO055 Inertial measurement unit
-  // std::shared_ptr<Sensor> bno055 = std::make_shared<BNO055Sensor>();
-  // sensorManager.addSensor(bno055);
+  std::shared_ptr<Sensor> bno055 = std::make_shared<BNO055Sensor>();
+  sensorManager.addSensor(bno055);
 
   // // Gas
   // std::shared_ptr<Sensor> ens160 = std::make_shared<ENS160Sensor>();

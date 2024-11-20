@@ -1,4 +1,3 @@
-// sensor_log.fbs
 namespace SensorLog;
 
 // Enum to identify sensor types
@@ -88,4 +87,11 @@ table SensorMessage {
   data: SensorDataUnion;
 }
 
-root_type SensorMessage;
+//Batching multiple sensor messages
+table SensorBatch {
+  timestamp: ulong; // Common timestamp for the batch
+  messages: [SensorMessage];
+}
+
+// Set SensorBatch as the root type
+root_type SensorBatch;

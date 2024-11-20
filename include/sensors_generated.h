@@ -33,6 +33,9 @@ struct BNO055DataBuilder;
 struct SensorMessage;
 struct SensorMessageBuilder;
 
+struct SensorBatch;
+struct SensorBatchBuilder;
+
 enum SensorType : int8_t {
   SensorType_BME688 = 0,
   SensorType_ENS160 = 1,
@@ -824,6 +827,70 @@ inline ::flatbuffers::Offset<SensorMessage> CreateSensorMessage(
   return builder_.Finish();
 }
 
+struct SensorBatch FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+  typedef SensorBatchBuilder Builder;
+  enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
+    VT_TIMESTAMP = 4,
+    VT_MESSAGES = 6
+  };
+  uint64_t timestamp() const {
+    return GetField<uint64_t>(VT_TIMESTAMP, 0);
+  }
+  const ::flatbuffers::Vector<::flatbuffers::Offset<SensorLog::SensorMessage>> *messages() const {
+    return GetPointer<const ::flatbuffers::Vector<::flatbuffers::Offset<SensorLog::SensorMessage>> *>(VT_MESSAGES);
+  }
+  bool Verify(::flatbuffers::Verifier &verifier) const {
+    return VerifyTableStart(verifier) &&
+           VerifyField<uint64_t>(verifier, VT_TIMESTAMP, 8) &&
+           VerifyOffset(verifier, VT_MESSAGES) &&
+           verifier.VerifyVector(messages()) &&
+           verifier.VerifyVectorOfTables(messages()) &&
+           verifier.EndTable();
+  }
+};
+
+struct SensorBatchBuilder {
+  typedef SensorBatch Table;
+  ::flatbuffers::FlatBufferBuilder &fbb_;
+  ::flatbuffers::uoffset_t start_;
+  void add_timestamp(uint64_t timestamp) {
+    fbb_.AddElement<uint64_t>(SensorBatch::VT_TIMESTAMP, timestamp, 0);
+  }
+  void add_messages(::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<SensorLog::SensorMessage>>> messages) {
+    fbb_.AddOffset(SensorBatch::VT_MESSAGES, messages);
+  }
+  explicit SensorBatchBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
+        : fbb_(_fbb) {
+    start_ = fbb_.StartTable();
+  }
+  ::flatbuffers::Offset<SensorBatch> Finish() {
+    const auto end = fbb_.EndTable(start_);
+    auto o = ::flatbuffers::Offset<SensorBatch>(end);
+    return o;
+  }
+};
+
+inline ::flatbuffers::Offset<SensorBatch> CreateSensorBatch(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    uint64_t timestamp = 0,
+    ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<SensorLog::SensorMessage>>> messages = 0) {
+  SensorBatchBuilder builder_(_fbb);
+  builder_.add_timestamp(timestamp);
+  builder_.add_messages(messages);
+  return builder_.Finish();
+}
+
+inline ::flatbuffers::Offset<SensorBatch> CreateSensorBatchDirect(
+    ::flatbuffers::FlatBufferBuilder &_fbb,
+    uint64_t timestamp = 0,
+    const std::vector<::flatbuffers::Offset<SensorLog::SensorMessage>> *messages = nullptr) {
+  auto messages__ = messages ? _fbb.CreateVector<::flatbuffers::Offset<SensorLog::SensorMessage>>(*messages) : 0;
+  return SensorLog::CreateSensorBatch(
+      _fbb,
+      timestamp,
+      messages__);
+}
+
 inline bool VerifySensorDataUnion(::flatbuffers::Verifier &verifier, const void *obj, SensorDataUnion type) {
   switch (type) {
     case SensorDataUnion_NONE: {
@@ -865,33 +932,33 @@ inline bool VerifySensorDataUnionVector(::flatbuffers::Verifier &verifier, const
   return true;
 }
 
-inline const SensorLog::SensorMessage *GetSensorMessage(const void *buf) {
-  return ::flatbuffers::GetRoot<SensorLog::SensorMessage>(buf);
+inline const SensorLog::SensorBatch *GetSensorBatch(const void *buf) {
+  return ::flatbuffers::GetRoot<SensorLog::SensorBatch>(buf);
 }
 
-inline const SensorLog::SensorMessage *GetSizePrefixedSensorMessage(const void *buf) {
-  return ::flatbuffers::GetSizePrefixedRoot<SensorLog::SensorMessage>(buf);
+inline const SensorLog::SensorBatch *GetSizePrefixedSensorBatch(const void *buf) {
+  return ::flatbuffers::GetSizePrefixedRoot<SensorLog::SensorBatch>(buf);
 }
 
-inline bool VerifySensorMessageBuffer(
+inline bool VerifySensorBatchBuffer(
     ::flatbuffers::Verifier &verifier) {
-  return verifier.VerifyBuffer<SensorLog::SensorMessage>(nullptr);
+  return verifier.VerifyBuffer<SensorLog::SensorBatch>(nullptr);
 }
 
-inline bool VerifySizePrefixedSensorMessageBuffer(
+inline bool VerifySizePrefixedSensorBatchBuffer(
     ::flatbuffers::Verifier &verifier) {
-  return verifier.VerifySizePrefixedBuffer<SensorLog::SensorMessage>(nullptr);
+  return verifier.VerifySizePrefixedBuffer<SensorLog::SensorBatch>(nullptr);
 }
 
-inline void FinishSensorMessageBuffer(
+inline void FinishSensorBatchBuffer(
     ::flatbuffers::FlatBufferBuilder &fbb,
-    ::flatbuffers::Offset<SensorLog::SensorMessage> root) {
+    ::flatbuffers::Offset<SensorLog::SensorBatch> root) {
   fbb.Finish(root);
 }
 
-inline void FinishSizePrefixedSensorMessageBuffer(
+inline void FinishSizePrefixedSensorBatchBuffer(
     ::flatbuffers::FlatBufferBuilder &fbb,
-    ::flatbuffers::Offset<SensorLog::SensorMessage> root) {
+    ::flatbuffers::Offset<SensorLog::SensorBatch> root) {
   fbb.FinishSizePrefixed(root);
 }
 

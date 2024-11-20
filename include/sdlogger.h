@@ -21,6 +21,11 @@ private:
     uint8_t csPin_;
     uint8_t writeBuffer_[WRITE_BUFFER_SIZE];
     size_t bufferIndex_;
+
+    Sd2Card card;
+    SdVolume volume;
+    SdFile root;
+    
 };
 
 #endif // SD_LOGGER_H

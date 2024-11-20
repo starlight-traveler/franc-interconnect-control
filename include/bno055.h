@@ -19,10 +19,17 @@ public:
     String getData() const override;
     unsigned long getUpdateInterval() const override; // Implemented
 
+    bool hasNewData() const override; // Indicates if there's new data available
+    void resetNewDataFlag() override; // Resets the new data flag
+    void getData(void *data) const;   // Retrieves the populated struct
+    virtual flatbuffers::Offset<SensorLog::SensorMessage> serialize(flatbuffers::FlatBufferBuilder &builder, unsigned long timestamp) const override;
+
     sensor_t sensor_val;
 
 private:
     Adafruit_BNO055 sensor = Adafruit_BNO055(55, 0x28, &Wire);
+    BNO055DataStruct data_; // Struct to hold sensor data
+    bool newDataFlag_;      // Tracks if new data is available
     String sensorData_;
 };
 

@@ -5,12 +5,13 @@
 #include <Arduino.h>
 #include <memory>
 #include <vector>
-#include "Sensor.h"
-#include "SDLogger.h"
+#include "sensor.h"
+#include "sdlogger.h"
 #include "sensor.h"
 #include "flatbuffers/flatbuffers.h"
 #include "sensors_generated.h"
 #include "sensor_struct.h"
+
 
 #define CALC_INTERVAL_MS 1000 // 1-second interval for update rate calculation
 
@@ -24,9 +25,9 @@ public:
     void printAllData() const;
     void addSensor(std::shared_ptr<Sensor> sensor);
     float getUpdateRateHz() const;
+    void deserializeAndVerify(const uint8_t *buf, size_t size);
 
-private:
-    std::vector<std::shared_ptr<Sensor>> sensors;
+    private : std::vector<std::shared_ptr<Sensor>> sensors;
     unsigned long lastUpdateTime_;
     unsigned long updateCount_;
     float updateRateHz_;
