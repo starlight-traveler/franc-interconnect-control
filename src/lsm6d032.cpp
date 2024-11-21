@@ -1,5 +1,6 @@
 // MPLAltimeterSensor.cpp
 #include "lsm6d032.h"
+#include "sensor_struct.h"
 
 LSM6D032Sensor::LSM6D032Sensor() : lsm() {}
 
@@ -30,20 +31,27 @@ void LSM6D032Sensor::update()
     {
         lsm.getEvent(&accel, &gyro, &temp);
 
+        data_.accel_x = accel.acceleration.x;
+        data_.accel_y = accel.acceleration.y;
+        data_.accel_z = accel.acceleration.z;
 
-        // Acceleration
-        float accel_x = accel.acceleration.x;
-        float accel_y = accel.acceleration.y;
-        float accel_z = accel.acceleration.z;
+        data_.gyro_x = gyro.gyro.x;
+        data_.gyro_y = gyro.gyro.y;
+        data_.gyro_z = gyro.gyro.z;
 
-        // Gyroscope
-        float gyro_x = gyro.gyro.x;
-        float gyro_y = gyro.gyro.y;
-        float gyro_z = gyro.gyro.z;
+        newDataFlag_ = true;
 
-        sensorData_ = "placeholder";
-        lastUpdateTime = currentTime;
     }
+}
+
+bool LSM6D032Sensor::hasNewData() const
+{
+    return newDataFlag_;
+}
+
+void LSM6D032Sensor::resetNewDataFlag()
+{
+    newDataFlag_ = false;
 }
 
 String LSM6D032Sensor::getName() const

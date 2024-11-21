@@ -20,7 +20,14 @@ public:
     String getData() const override;
     unsigned long getUpdateInterval() const override; // Implemented
 
+    bool hasNewData() const override;                 // Indicates if there's new data available
+    void resetNewDataFlag() override;                 // Resets the new data flag
+    void getData(void *data) const;                   // Retrieves the populated struct
+    virtual flatbuffers::Offset<SensorLog::SensorMessage> serialize(flatbuffers::FlatBufferBuilder &builder, unsigned long timestamp) const override;
+
 private:
+    bool newDataFlag_;      // Tracks if new data is available
+    BME688DataStruct data_; // Struct to hold sensor data
     Adafruit_BME680 sensor; 
     String sensorData_;
 };

@@ -1,5 +1,6 @@
 // bno085.cpp
 #include "bme688.h"
+#include "sensor_struct.h"
 
 BME688Sensor::BME688Sensor() : sensor(&Wire) {}
 
@@ -32,43 +33,30 @@ void BME688Sensor::update()
         return;
     }
 
-    // Retrieve sensor data
     float temperature = sensor.temperature;                     // in Celsius
     float pressure = sensor.pressure / 100.0;                   // in hPa
     float humidity = sensor.humidity;                           // in %
     float gas = sensor.gas_resistance / 1000.0;                 // in KOhms
     float altitude = sensor.readAltitude(SEALEVELPRESSURE_HPA); // in meters
 
-    // Format the sensor data as a CSV string
-    // Example: "Temperature,Pressure,Humidity,Gas,Altitude"
-    sensorData_ = String(temperature, 2) + "," +
-                  String(pressure, 2) + "," +
-                  String(humidity, 2) + "," +
-                  String(gas, 2) + "," +
-                  String(altitude, 2);
+    data_.temperature = sensor.temperature;
+    data_.pressure = sensor.pressure;
+    data_.humidity = sensor.humidity;
+    data_.gas_resistance = sensor.gas_resistance;
+    data_.altitude = sensor.readAltitude(SEALEVELPRESSURE_HPA);
 
-    // // Debugging: Print the sensor data to Serial Monitor
-    // Serial.print("Temperature = ");
-    // Serial.print(temperature);
-    // Serial.println(" *C");
+    newDataFlag_ = true;
 
-    // Serial.print("Pressure = ");
-    // Serial.print(pressure);
-    // Serial.println(" hPa");
+}
 
-    // Serial.print("Humidity = ");
-    // Serial.print(humidity);
-    // Serial.println(" %");
+bool BME688Sensor::hasNewData() const
+{
+    return newDataFlag_;
+}
 
-    // Serial.print("Gas = ");
-    // Serial.print(gas);
-    // Serial.println(" KOhms");
-
-    // Serial.print("Approx. Altitude = ");
-    // Serial.print(altitude);
-    // Serial.println(" m");
-
-    // Serial.println(); // Blank line for readability
+void BME688Sensor::resetNewDataFlag()
+{
+    newDataFlag_ = false;
 }
 
 String BME688Sensor::getName() const
