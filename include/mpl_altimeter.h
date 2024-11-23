@@ -17,12 +17,13 @@ public:
     bool begin() override;
     void update() override;
     String getName() const override;
-    String getData() const override;
+    const SensorData *getData() const override; // Updated return type
     unsigned long getUpdateInterval() const override;
 
     bool hasNewData() const override;        // Indicates if there's new data available
     void resetNewDataFlag() override;        // Resets the new data flag
     void getData(void *data) const; // Retrieves the populated struct
+    SensorType getSensorType() const override; // Implemented method
 
     void setOversampleRate(uint8_t oversampleRate);
     virtual flatbuffers::Offset<SensorLog::SensorMessage> serialize(flatbuffers::FlatBufferBuilder &builder, unsigned long timestamp) const override;

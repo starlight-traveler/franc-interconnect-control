@@ -13,13 +13,26 @@ public:
     bool begin() override;
     void update() override;
     String getName() const override;
-    String getData() const override;
-    unsigned long getUpdateInterval() const override; // Implemented
+    const SensorData *getData() const override;
+    unsigned long getUpdateInterval() const override;
+
+    bool hasNewData() const override;
+    void resetNewDataFlag() override;
+    virtual flatbuffers::Offset<SensorLog::SensorMessage> serialize(flatbuffers::FlatBufferBuilder &builder, unsigned long timestamp) const override;
+    SensorType getSensorType() const override;
 
 private:
-    ScioSense_ENS160 ens160; // Declaration only
+    ScioSense_ENS160 ens160;
+    ENS160DataStruct data_;
+    bool newDataFlag_;
+    unsigned long lastUpdateTime;
 
-    String sensorData_;
+    enum MeasurementState
+    {
+        Idle,
+        Measuring
+    };
+    MeasurementState measurementState_;
 };
 
 #endif // ENS160_SENSOR_H

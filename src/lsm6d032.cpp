@@ -49,9 +49,32 @@ bool LSM6D032Sensor::hasNewData() const
     return newDataFlag_;
 }
 
+flatbuffers::Offset<SensorLog::SensorMessage> LSM6D032Sensor::serialize(flatbuffers::FlatBufferBuilder &builder, unsigned long timestamp) const
+{
+    // Create FlatBuffers MPLAltimeterData from the struct
+    auto lsm = SensorLog::CreateLSM6D032Data(builder, 0, 0, 0, 0, 0, 0);
+
+    // Get the union offset
+    auto dataOffset = lsm.Union();
+
+    // Create the SensorMessage FlatBuffers object
+    return SensorLog::CreateSensorMessage(
+        builder,
+        SensorLog::SensorType_LSM6D032,          // sensor_type
+        timestamp,                             // timestamp
+        SensorLog::SensorDataUnion_LSM6D032Data, // data_type (union type)
+        dataOffset                             // data (union data)
+    );
+}
+
 void LSM6D032Sensor::resetNewDataFlag()
 {
     newDataFlag_ = false;
+}
+
+SensorType LSM6D032Sensor::getSensorType() const
+{
+    return SensorType::LSM6D032;
 }
 
 String LSM6D032Sensor::getName() const
@@ -59,9 +82,9 @@ String LSM6D032Sensor::getName() const
     return "LSM6D032";
 }
 
-String LSM6D032Sensor::getData() const
+const SensorData *LSM6D032Sensor::getData() const
 {
-    return sensorData_;
+    return &data_;
 }
 
 unsigned long LSM6D032Sensor::getUpdateInterval() const

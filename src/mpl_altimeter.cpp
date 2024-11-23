@@ -68,10 +68,14 @@ String MPLAltimeterSensor::getName() const
     return "MPL3115A2";
 }
 
-String MPLAltimeterSensor::getData() const
+SensorType MPLAltimeterSensor::getSensorType() const
 {
-    // Optionally convert struct data to a readable string
-    return "Pressure: " + String(data_.pressure) + " Pa, Altitude: " + String(data_.altitude) + " m";
+    return SensorType::MPLAltimeter;
+}
+
+const SensorData *MPLAltimeterSensor::getData() const
+{
+    return &data_;
 }
 
 unsigned long MPLAltimeterSensor::getUpdateInterval() const

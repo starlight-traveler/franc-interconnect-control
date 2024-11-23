@@ -20,6 +20,16 @@ void BNO055Sensor::setExternalCrystal(void)
     sensor.setExtCrystalUse(true);
 }
 
+const SensorData *BNO055Sensor::getData() const
+{
+    return &data_;
+}
+
+SensorType BNO055Sensor::getSensorType() const
+{
+    return SensorType::BNO055;
+}
+
 void BNO055Sensor::update()
 {
 
@@ -141,11 +151,6 @@ flatbuffers::Offset<SensorLog::SensorMessage> BNO055Sensor::serialize(flatbuffer
 String BNO055Sensor::getName() const
 {
     return "BNO055";
-}
-
-String BNO055Sensor::getData() const
-{
-    return sensorData_;
 }
 
 bool BNO055Sensor::hasNewData() const

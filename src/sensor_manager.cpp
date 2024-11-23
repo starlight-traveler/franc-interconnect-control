@@ -1,24 +1,29 @@
-// sensor_manager
 #include "sensor_manager.h"
 #include "mpl_altimeter.h"
 #include "sensor_struct.h"
 
 SensorManager::SensorManager(uint8_t sdChipSelectPin)
     : lastUpdateTime_(0), updateCount_(0), updateRateHz_(0.0f),
-      sdLogger_(sdChipSelectPin), builder_(2048), // Initialize builder with 1KB buffer
+      csvLogger_(sdChipSelectPin, "log.csv"), builder_(2048), // Initialize builder with 2KB buffer
       latestBME688_(), latestENS160_(), latestLSM6D032_(),
-      latestMPLAltimeter_(), latestBNO055_()
+      latestMPLAltimeter_(), latestBNO055_(),
+      headersWritten_(false) // Initialize the flag for header writing
 {
+}
+
+bool SensorManager::begin()
+{
+    // Initialize CSV Logger
+    if (!csvLogger_.begin())
+    {
+        Serial.println("Failed to initialize CSV Logger.");
+        return false;
+    }
+    return true;
 }
 
 bool SensorManager::beginAll()
 {
-    if (!sdLogger_.begin())
-    {
-        Serial.println("SDLogger failed to initialize.");
-        return false;
-    }
-
     bool allInitialized = true;
     for (auto &sensor : sensors)
     {
@@ -55,9 +60,7 @@ void SensorManager::updateAll()
         lastUpdateTime_ = currentTime;
         updateCount_ = 0;
 
-        Serial.print("Update Rate: ");
-        Serial.print(updateRateHz_);
-        Serial.println(" Hz");
+        Serial.println(updateRateHz_);
     }
 }
 
@@ -70,286 +73,176 @@ void SensorManager::logAllData()
 {
     unsigned long timestamp = millis();
 
-    // Vector to hold all SensorMessage offsets
-    std::vector<flatbuffers::Offset<SensorLog::SensorMessage>> messageVector;
+    // Log data to CSV
+    logToCSV(timestamp);
 
-    // Iterate through each sensor and serialize its data if new data is available
+    // Periodically flush the buffers to ensure data is written
+    if (timestamp % CALC_INTERVAL_MS < 10)
+    {
+        csvLogger_.flush();
+    }
+}
+
+void SensorManager::logToCSV(unsigned long timestamp)
+{
+    // Write headers if not already written
+    if (!headersWritten_)
+    {
+        String headers = "Timestamp,Sensor,BME_Temperature,BME_Pressure,BME_Humidity,BME_Gas_Resistance,BME_Altitude,ENS_AQI,ENS_TVOC,ENS_eCO2,ENS_HP0,ENS_HP1,ENS_HP2,ENS_HP3,LSM_Accel_X,LSM_Accel_Y,LSM_Accel_Z,LSM_Gyro_X,LSM_Gyro_Y,LSM_Gyro_Z,MPL_Pressure,MPL_Altitude,BNO_Accel_X,BNO_Accel_Y,BNO_Accel_Z,BNO_Mag_X,BNO_Mag_Y,BNO_Mag_Z,BNO_Gyro_X,BNO_Gyro_Y,BNO_Gyro_Z,BNO_Euler_Heading,BNO_Euler_Roll,BNO_Euler_Pitch,BNO_Linear_Accel_X,BNO_Linear_Accel_Y,BNO_Linear_Accel_Z,BNO_Gravity_X,BNO_Gravity_Y,BNO_Gravity_Z,BNO_Calibration_System,BNO_Calibration_Gyro,BNO_Calibration_Accel,BNO_Calibration_Mag";
+        csvLogger_.logCSV(headers.c_str());
+        headersWritten_ = true;
+    }
+
+    // Initialize all fields to empty strings or default values
+    String sensorName = "";
+    String bmeTemperature = "";
+    String bmePressure = "";
+    String bmeHumidity = "";
+    String bmeGasResistance = "";
+    String bmeAltitude = "";
+    String ensAQI = "";
+    String ensTVOC = "";
+    String enseCO2 = "";
+    String ensHP0 = "";
+    String ensHP1 = "";
+    String ensHP2 = "";
+    String ensHP3 = "";
+    String lsmAccelX = "";
+    String lsmAccelY = "";
+    String lsmAccelZ = "";
+    String lsmGyroX = "";
+    String lsmGyroY = "";
+    String lsmGyroZ = "";
+    String mplPressure = "";
+    String mplAltitude = "";
+    String bnoAccelX = "";
+    String bnoAccelY = "";
+    String bnoAccelZ = "";
+    String bnoMagX = "";
+    String bnoMagY = "";
+    String bnoMagZ = "";
+    String bnoGyroX = "";
+    String bnoGyroY = "";
+    String bnoGyroZ = "";
+    String bnoEulerHeading = "";
+    String bnoEulerRoll = "";
+    String bnoEulerPitch = "";
+    String bnoLinearAccelX = "";
+    String bnoLinearAccelY = "";
+    String bnoLinearAccelZ = "";
+    String bnoGravityX = "";
+    String bnoGravityY = "";
+    String bnoGravityZ = "";
+    String bnoCalibrationSystem = "";
+    String bnoCalibrationGyro = "";
+    String bnoCalibrationAccel = "";
+    String bnoCalibrationMag = "";
+
+    // Collect data from sensors
     for (auto &sensor : sensors)
     {
         if (sensor->hasNewData())
         {
-            // Serialize the sensor's data and add to messageVector
-            auto sensorMessage = sensor->serialize(builder_, timestamp);
-            messageVector.push_back(sensorMessage);
+            sensorName = sensor->getName();
+            const SensorData *data = sensor->getData();
+            SensorType type = sensor->getSensorType();
+
+            switch (type)
+            {
+            case SensorType::BME688:
+            {
+                const BME688DataStruct *bmeData = static_cast<const BME688DataStruct *>(data);
+                bmeTemperature = String(bmeData->temperature, 2);
+                bmePressure = String(bmeData->pressure, 2);
+                bmeHumidity = String(bmeData->humidity, 2);
+                bmeGasResistance = String(bmeData->gas_resistance, 2);
+                bmeAltitude = String(bmeData->altitude, 2);
+                break;
+            }
+            case SensorType::ENS160:
+            {
+                const ENS160DataStruct *ensData = static_cast<const ENS160DataStruct *>(data);
+                ensAQI = String(ensData->aqi);
+                ensTVOC = String(ensData->tvoc);
+                enseCO2 = String(ensData->eco2);
+                ensHP0 = String(ensData->hp0, 2);
+                ensHP1 = String(ensData->hp1, 2);
+                ensHP2 = String(ensData->hp2, 2);
+                ensHP3 = String(ensData->hp3, 2);
+                break;
+            }
+            case SensorType::LSM6D032:
+            {
+                const LSM6D032DataStruct *lsmData = static_cast<const LSM6D032DataStruct *>(data);
+                lsmAccelX = String(lsmData->accel_x, 2);
+                lsmAccelY = String(lsmData->accel_y, 2);
+                lsmAccelZ = String(lsmData->accel_z, 2);
+                lsmGyroX = String(lsmData->gyro_x, 2);
+                lsmGyroY = String(lsmData->gyro_y, 2);
+                lsmGyroZ = String(lsmData->gyro_z, 2);
+                break;
+            }
+            case SensorType::MPLAltimeter:
+            {
+                const MPLAltimeterDataStruct *mplData = static_cast<const MPLAltimeterDataStruct *>(data);
+                mplPressure = String(mplData->pressure, 2);
+                mplAltitude = String(mplData->altitude, 2);
+                break;
+            }
+            case SensorType::BNO055:
+            {
+                const BNO055DataStruct *bnoData = static_cast<const BNO055DataStruct *>(data);
+                bnoAccelX = String(bnoData->accel_x, 2);
+                bnoAccelY = String(bnoData->accel_y, 2);
+                bnoAccelZ = String(bnoData->accel_z, 2);
+                bnoMagX = String(bnoData->mag_x, 2);
+                bnoMagY = String(bnoData->mag_y, 2);
+                bnoMagZ = String(bnoData->mag_z, 2);
+                bnoGyroX = String(bnoData->gyro_x, 2);
+                bnoGyroY = String(bnoData->gyro_y, 2);
+                bnoGyroZ = String(bnoData->gyro_z, 2);
+                bnoEulerHeading = String(bnoData->euler_heading, 2);
+                bnoEulerRoll = String(bnoData->euler_roll, 2);
+                bnoEulerPitch = String(bnoData->euler_pitch, 2);
+                bnoLinearAccelX = String(bnoData->linear_accel_x, 2);
+                bnoLinearAccelY = String(bnoData->linear_accel_y, 2);
+                bnoLinearAccelZ = String(bnoData->linear_accel_z, 2);
+                bnoGravityX = String(bnoData->gravity_x, 2);
+                bnoGravityY = String(bnoData->gravity_y, 2);
+                bnoGravityZ = String(bnoData->gravity_z, 2);
+                bnoCalibrationSystem = String(bnoData->calibration_status_system);
+                bnoCalibrationGyro = String(bnoData->calibration_status_gyro);
+                bnoCalibrationAccel = String(bnoData->calibration_status_accel);
+                bnoCalibrationMag = String(bnoData->calibration_status_mag);
+                break;
+            }
+            default:
+                Serial.println("Unknown sensor type encountered.");
+                break;
+            }
 
             // Reset the new data flag
             sensor->resetNewDataFlag();
         }
     }
 
-    // After collecting all SensorMessages, create SensorBatch
-    if (!messageVector.empty())
-    {
-        // Create a FlatBuffers vector from the messageVector
-        auto messages = builder_.CreateVector(messageVector);
+    // Build the CSV line with all fields
+    String csvLine = String(timestamp) + "," + "FRANC" + "," +
+                     bmeTemperature + "," + bmePressure + "," + bmeHumidity + "," + bmeGasResistance + "," + bmeAltitude + "," +
+                     ensAQI + "," + ensTVOC + "," + enseCO2 + "," + ensHP0 + "," + ensHP1 + "," + ensHP2 + "," + ensHP3 + "," +
+                     lsmAccelX + "," + lsmAccelY + "," + lsmAccelZ + "," + lsmGyroX + "," + lsmGyroY + "," + lsmGyroZ + "," +
+                     mplPressure + "," + mplAltitude + "," +
+                     bnoAccelX + "," + bnoAccelY + "," + bnoAccelZ + "," +
+                     bnoMagX + "," + bnoMagY + "," + bnoMagZ + "," +
+                     bnoGyroX + "," + bnoGyroY + "," + bnoGyroZ + "," +
+                     bnoEulerHeading + "," + bnoEulerRoll + "," + bnoEulerPitch + "," +
+                     bnoLinearAccelX + "," + bnoLinearAccelY + "," + bnoLinearAccelZ + "," +
+                     bnoGravityX + "," + bnoGravityY + "," + bnoGravityZ + "," +
+                     bnoCalibrationSystem + "," + bnoCalibrationGyro + "," + bnoCalibrationAccel + "," + bnoCalibrationMag +
+                     "\n";
 
-        // Create the SensorBatch with the common timestamp and all messages
-        auto sensorBatch = SensorLog::CreateSensorBatch(
-            builder_,
-            timestamp, // Common timestamp for the batch
-            messages   // Vector of SensorMessage
-        );
-
-        // Finish the FlatBuffer with SensorBatch as the root
-        builder_.Finish(sensorBatch);
-
-        uint8_t *buf = builder_.GetBufferPointer();
-        size_t size = builder_.GetSize();
-
-        // Log the serialized batch to SD card
-        sdLogger_.logMessage(buf, size);
-
-        // Attemping deserializing
-    
-        Serial.println("Serialization...");
-
-        // Optional: Check serialization (for debugging)
-        deserializeAndVerify(buf, size);
-
-        // Reset builder for the next message
-        builder_.Reset();
-    }
-
-    // Periodically flush the buffer to ensure data is written
-    if (timestamp % CALC_INTERVAL_MS < 10)
-    { // Adjust threshold as needed
-        sdLogger_.flush();
-    }
-}
-
-void SensorManager::deserializeAndVerify(const uint8_t *buf, size_t size)
-{
-    // Verify the buffer
-    flatbuffers::Verifier verifier(buf, size);
-    if (!SensorLog::VerifySensorBatchBuffer(verifier))
-    {
-        Serial.println("Failed to verify SensorBatch buffer.");
-        return;
-    }
-
-    // Get the root object
-    auto sensorBatch = SensorLog::GetSensorBatch(buf);
-
-    // Access and print the common timestamp
-    auto batchTimestamp = sensorBatch->timestamp();
-    Serial.print("Batch Timestamp: ");
-    Serial.println(batchTimestamp);
-
-    // Access the vector of SensorMessages
-    auto messages = sensorBatch->messages();
-    if (messages)
-    {
-        for (auto it = messages->begin(); it != messages->end(); ++it)
-        {
-            auto sensorMessage = *it;
-            if (!sensorMessage)
-                continue;
-
-            // Access and print the sensor_type and timestamp for each message
-            auto sensorType = sensorMessage->sensor_type();
-            Serial.print("Sensor Type: ");
-            switch (sensorType)
-            {
-            case SensorLog::SensorType_BME688:
-                Serial.println("BME688");
-                break;
-            case SensorLog::SensorType_ENS160:
-                Serial.println("ENS160");
-                break;
-            case SensorLog::SensorType_LSM6D032:
-                Serial.println("LSM6D032");
-                break;
-            case SensorLog::SensorType_MPLAltimeter:
-                Serial.println("MPLAltimeter");
-                break;
-            case SensorLog::SensorType_BNO055:
-                Serial.println("BNO055");
-                break;
-            default:
-                Serial.println("Unknown");
-                break;
-            }
-
-            Serial.print("Message Timestamp: ");
-            Serial.println(sensorMessage->timestamp());
-
-            // Access the union data based on the sensor_type
-            switch (sensorType)
-            {
-            case SensorLog::SensorType_BME688:
-            {
-                auto data = sensorMessage->data_as_BME688Data();
-                if (data)
-                {
-                    Serial.println("BME688 Data:");
-                    Serial.print("Temperature: ");
-                    Serial.println(data->temperature());
-                    Serial.print("Pressure: ");
-                    Serial.println(data->pressure());
-                    Serial.print("Humidity: ");
-                    Serial.println(data->humidity());
-                    Serial.print("Gas Resistance: ");
-                    Serial.println(data->gas_resistance());
-                    Serial.print("Altitude: ");
-                    Serial.println(data->altitude());
-                }
-                break;
-            }
-            case SensorLog::SensorType_ENS160:
-            {
-                auto data = sensorMessage->data_as_ENS160Data();
-                if (data)
-                {
-                    Serial.println("ENS160 Data:");
-                    Serial.print("AQI: ");
-                    Serial.println(data->aqi());
-                    Serial.print("TVOC: ");
-                    Serial.println(data->tvoc());
-                    Serial.print("eCO2: ");
-                    Serial.println(data->eco2());
-                    Serial.print("HP0: ");
-                    Serial.println(data->hp0());
-                    Serial.print("HP1: ");
-                    Serial.println(data->hp1());
-                    Serial.print("HP2: ");
-                    Serial.println(data->hp2());
-                    Serial.print("HP3: ");
-                    Serial.println(data->hp3());
-                }
-                break;
-            }
-            case SensorLog::SensorType_LSM6D032:
-            {
-                auto data = sensorMessage->data_as_LSM6D032Data();
-                if (data)
-                {
-                    Serial.println("LSM6D032 Data:");
-                    Serial.print("Accel X: ");
-                    Serial.println(data->accel_x());
-                    Serial.print("Accel Y: ");
-                    Serial.println(data->accel_y());
-                    Serial.print("Accel Z: ");
-                    Serial.println(data->accel_z());
-                    Serial.print("Gyro X: ");
-                    Serial.println(data->gyro_x());
-                    Serial.print("Gyro Y: ");
-                    Serial.println(data->gyro_y());
-                    Serial.print("Gyro Z: ");
-                    Serial.println(data->gyro_z());
-                }
-                break;
-            }
-            case SensorLog::SensorType_MPLAltimeter:
-            {
-                auto data = sensorMessage->data_as_MPLAltimeterData();
-                if (data)
-                {
-                    Serial.println("MPLAltimeter Data:");
-                    Serial.print("Pressure: ");
-                    Serial.println(data->pressure());
-                    Serial.print("Altitude: ");
-                    Serial.println(data->altitude());
-                }
-                break;
-            }
-            case SensorLog::SensorType_BNO055:
-            {
-                auto data = sensorMessage->data_as_BNO055Data();
-                if (data)
-                {
-                    Serial.println("BNO055 Data:");
-                    Serial.print("Accel X: ");
-                    Serial.println(data->accel_x());
-                    Serial.print("Accel Y: ");
-                    Serial.println(data->accel_y());
-                    Serial.print("Accel Z: ");
-                    Serial.println(data->accel_z());
-                    Serial.print("Mag X: ");
-                    Serial.println(data->mag_x());
-                    Serial.print("Mag Y: ");
-                    Serial.println(data->mag_y());
-                    Serial.print("Mag Z: ");
-                    Serial.println(data->mag_z());
-                    Serial.print("Gyro X: ");
-                    Serial.println(data->gyro_x());
-                    Serial.print("Gyro Y: ");
-                    Serial.println(data->gyro_y());
-                    Serial.print("Gyro Z: ");
-                    Serial.println(data->gyro_z());
-                    Serial.print("Euler Heading: ");
-                    Serial.println(data->euler_heading());
-                    Serial.print("Euler Roll: ");
-                    Serial.println(data->euler_roll());
-                    Serial.print("Euler Pitch: ");
-                    Serial.println(data->euler_pitch());
-                    Serial.print("Linear Accel X: ");
-                    Serial.println(data->linear_accel_x());
-                    Serial.print("Linear Accel Y: ");
-                    Serial.println(data->linear_accel_y());
-                    Serial.print("Linear Accel Z: ");
-                    Serial.println(data->linear_accel_z());
-                    Serial.print("Gravity X: ");
-                    Serial.println(data->gravity_x());
-                    Serial.print("Gravity Y: ");
-                    Serial.println(data->gravity_y());
-                    Serial.print("Gravity Z: ");
-                    Serial.println(data->gravity_z());
-                    Serial.print("Calibration Status System: ");
-                    Serial.println(data->calibration_status_system());
-                    Serial.print("Calibration Status Gyro: ");
-                    Serial.println(data->calibration_status_gyro());
-                    Serial.print("Calibration Status Accel: ");
-                    Serial.println(data->calibration_status_accel());
-                    Serial.print("Calibration Status Mag: ");
-                    Serial.println(data->calibration_status_mag());
-                }
-                break;
-            }
-            default:
-                Serial.println("Unknown Sensor Type. Cannot deserialize data.");
-                break;
-            }
-        }
-    }
-}
-
-void SensorManager::printAllData() const
-{
-    Serial.print("Timestamp: ");
-    Serial.println(millis());
-
-    Serial.print("BME688 - Temperature: ");
-    Serial.print(latestBME688_.temperature);
-    Serial.println(" °C");
-
-    Serial.print("BME688 - Pressure: ");
-    Serial.print(latestBME688_.pressure);
-    Serial.println(" hPa");
-
-    Serial.print("BME688 - Humidity: ");
-    Serial.print(latestBME688_.humidity);
-    Serial.println(" %");
-
-    Serial.print("BME688 - Gas Resistance: ");
-    Serial.print(latestBME688_.gas_resistance);
-    Serial.println(" KOhms");
-
-    Serial.print("BME688 - Altitude: ");
-    Serial.print(latestBME688_.altitude);
-    Serial.println(" m");
-
-    // Repeat for other sensors...
-    // ENS160, LSM6D032, MPLAltimeter, BNO055
+    // Write the CSV line to the CSV logger
+    csvLogger_.logCSV(csvLine.c_str());
 }
 
 float SensorManager::getUpdateRateHz() const

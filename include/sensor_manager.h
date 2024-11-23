@@ -12,13 +12,13 @@
 #include "sensors_generated.h"
 #include "sensor_struct.h"
 
-
 #define CALC_INTERVAL_MS 1000 // 1-second interval for update rate calculation
 
 class SensorManager
 {
 public:
     SensorManager(uint8_t sdChipSelectPin);
+    bool begin();
     bool beginAll();
     void updateAll();
     void logAllData();
@@ -27,12 +27,18 @@ public:
     float getUpdateRateHz() const;
     void deserializeAndVerify(const uint8_t *buf, size_t size);
 
-    private : std::vector<std::shared_ptr<Sensor>> sensors;
+private:
+    std::vector<std::shared_ptr<Sensor>> sensors;
     unsigned long lastUpdateTime_;
     unsigned long updateCount_;
     float updateRateHz_;
-    SDLogger sdLogger_;
+    // SDLogger sdLogger_;
     flatbuffers::FlatBufferBuilder builder_;
+    bool headersWritten_;
+
+    void logToFlatBuffers(unsigned long timestamp);
+    void logToCSV(unsigned long timestamp);
+    SDLogger csvLogger_;
 
     // Latest data from each sensor
     BME688DataStruct latestBME688_;

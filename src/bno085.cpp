@@ -111,9 +111,9 @@ String BNO085Sensor::getName() const
     return "BNO085";
 }
 
-String BNO085Sensor::getData() const
+const SensorData *BNO085Sensor::getData() const
 {
-    return sensorData_;
+    return 0;
 }
 
 unsigned long BNO085Sensor::getUpdateInterval() const

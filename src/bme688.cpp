@@ -1,4 +1,4 @@
-// bno085.cpp
+// bme688.cpp
 #include "bme688.h"
 #include "sensor_struct.h"
 
@@ -9,7 +9,7 @@ bool BME688Sensor::begin()
     // Try to initialize!
     if (!sensor.begin())
     {
-        // Serial.println("Could not find a valid BME680 sensor, check wiring!");
+        Serial.println("Could not find a valid BME680 sensor, check wiring!");
 
         return false;
     }
@@ -49,9 +49,32 @@ void BME688Sensor::update()
 
 }
 
+flatbuffers::Offset<SensorLog::SensorMessage> BME688Sensor::serialize(flatbuffers::FlatBufferBuilder &builder, unsigned long timestamp) const
+{
+    // Create FlatBuffers MPLAltimeterData from the struct
+    auto bme = SensorLog::CreateBME688Data(builder, 0, 0, 0, 0, 0);
+
+    // Get the union offset
+    auto dataOffset = bme.Union();
+
+    // Create the SensorMessage FlatBuffers object
+    return SensorLog::CreateSensorMessage(
+        builder,
+        SensorLog::SensorType_BME688,          // sensor_type
+        timestamp,                               // timestamp
+        SensorLog::SensorDataUnion_BME688Data, // data_type (union type)
+        dataOffset                               // data (union data)
+    );
+}
+
 bool BME688Sensor::hasNewData() const
 {
     return newDataFlag_;
+}
+
+SensorType BME688Sensor::getSensorType() const
+{
+    return SensorType::BME688;
 }
 
 void BME688Sensor::resetNewDataFlag()
@@ -64,9 +87,9 @@ String BME688Sensor::getName() const
     return "BME688";
 }
 
-String BME688Sensor::getData() const
+const SensorData *BME688Sensor::getData() const
 {
-    return sensorData_;
+    return &data_;
 }
 
 unsigned long BME688Sensor::getUpdateInterval() const

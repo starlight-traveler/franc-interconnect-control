@@ -8,16 +8,22 @@
 #include "rtc.h"
 #include "bno055.h"
 #include "ens160.h"
+#include "bme688.h"
+#include <SPI.h>
+#include <SD.h>
 
-SensorManager sensorManager(10);
+SensorManager sensorManager(BUILTIN_SDCARD);
 
 void setup()
 {
   Serial.begin(115200);
-  while (!Serial)
+
+  if (!sensorManager.begin())
   {
-    ;
-  } // Wait for serial port to connect
+    Serial.println("Failed to initialize SensorManager.");
+    while (1)
+      ; // Halt execution
+  }
 
   Wire.begin();          // Initialize I2C as master
   Wire.setClock(400000); // Set I2C clock to 400kHz
@@ -35,20 +41,22 @@ void setup()
   sensorManager.addSensor(bno055);
 
   // // Gas
-  // std::shared_ptr<Sensor> ens160 = std::make_shared<ENS160Sensor>();
-  // sensorManager.addSensor(ens160);
+  std::shared_ptr<Sensor> ens160 = std::make_shared<ENS160Sensor>();
+  sensorManager.addSensor(ens160);
 
   // Temperature & Humidity
 
   // Temperature & Humidity & Pressure
+  // std::shared_ptr<Sensor> bme688 = std::make_shared<BME688Sensor>();
+  // sensorManager.addSensor(bme688);
 
   // Alitmeter
   std::shared_ptr<Sensor> mplAltimeter = std::make_shared<MPLAltimeterSensor>();
   sensorManager.addSensor(mplAltimeter);
 
   // 32g Accelerometer
-  // std::shared_ptr<Sensor> lsm32d032 = std::make_shared<LSM6D032Sensor>();
-  // sensorManager.addSensor(lsm32d032);
+  std::shared_ptr<Sensor> lsm32d032 = std::make_shared<LSM6D032Sensor>();
+  sensorManager.addSensor(lsm32d032);
 
   // Initialize all sensors
   if (!sensorManager.beginAll())

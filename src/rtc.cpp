@@ -32,9 +32,9 @@ String RTCSensor::getName() const
     return "RTC";
 }
 
-String RTCSensor::getData() const
+const SensorData *RTCSensor::getData() const
 {
-    return sensorData_;
+    return 0;
 }
 
 unsigned long RTCSensor::getUpdateInterval() const

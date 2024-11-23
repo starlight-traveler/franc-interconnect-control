@@ -1,18 +1,28 @@
+// sensor_struct.h
 #ifndef SENSOR_STRUCT_H
 #define SENSOR_STRUCT_H
 
 #include <stdint.h>
+#include "sensor_types.h"
 
-struct BME688DataStruct
+struct SensorData
+{
+    virtual ~SensorData() {}
+    virtual SensorType getSensorType() const = 0;
+};
+
+struct BME688DataStruct : public SensorData
 {
     float temperature;    // Temperature in Celsius
     float pressure;       // Pressure in hPa
     float humidity;       // Humidity in %
     float gas_resistance; // Gas resistance in KOhms
     float altitude;       // Altitude in meters
+
+    virtual SensorType getSensorType() const override { return SensorType::BME688; }
 };
 
-struct ENS160DataStruct
+struct ENS160DataStruct : public SensorData
 {
     int aqi;   // Air Quality Index
     int tvoc;  // Total Volatile Organic Compounds in ppb
@@ -21,9 +31,11 @@ struct ENS160DataStruct
     float hp1; // Hotplate resistance HP1 in Ohms
     float hp2; // Hotplate resistance HP2 in Ohms
     float hp3; // Hotplate resistance HP3 in Ohms
+
+    virtual SensorType getSensorType() const override { return SensorType::ENS160; }
 };
 
-struct LSM6D032DataStruct
+struct LSM6D032DataStruct : public SensorData
 {
     float accel_x; // Acceleration in x-axis (m/s²)
     float accel_y; // Acceleration in y-axis (m/s²)
@@ -31,15 +43,19 @@ struct LSM6D032DataStruct
     float gyro_x;  // Gyroscope in x-axis (°/s)
     float gyro_y;  // Gyroscope in y-axis (°/s)
     float gyro_z;  // Gyroscope in z-axis (°/s)
+
+    virtual SensorType getSensorType() const override { return SensorType::LSM6D032; }
 };
 
-struct MPLAltimeterDataStruct
+struct MPLAltimeterDataStruct : public SensorData
 {
     float pressure; // Atmospheric pressure in Pa
     float altitude; // Altitude in meters
+
+    virtual SensorType getSensorType() const override { return SensorType::MPLAltimeter; }
 };
 
-struct BNO055DataStruct
+struct BNO055DataStruct : public SensorData
 {
     float accel_x;                     // Acceleration in x-axis (m/s²)
     float accel_y;                     // Acceleration in y-axis (m/s²)
@@ -63,6 +79,8 @@ struct BNO055DataStruct
     uint8_t calibration_status_gyro;   // Gyro calibration status (0-3)
     uint8_t calibration_status_accel;  // Accelerometer calibration status (0-3)
     uint8_t calibration_status_mag;    // Magnetometer calibration status (0-3)
+
+    virtual SensorType getSensorType() const override { return SensorType::BNO055; }
 };
 
 #endif // SENSOR_STRUCT_H

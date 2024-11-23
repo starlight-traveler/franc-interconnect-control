@@ -14,7 +14,7 @@ public:
     void update() override;
     void setReports();
     String getName() const override;
-    String getData() const override;
+    const SensorData *getData() const override;       // Updated return type
     unsigned long getUpdateInterval() const override; // Implemented
 
     sh2_SensorValue_t sensorValue;
