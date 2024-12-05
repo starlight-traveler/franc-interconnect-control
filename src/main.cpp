@@ -12,7 +12,7 @@
 #include <SPI.h>
 #include <SD.h>
 
-SensorManager sensorManager(BUILTIN_SDCARD);
+SensorManager sensorManager(10);
 
 void setup()
 {
@@ -21,8 +21,14 @@ void setup()
   if (!sensorManager.begin())
   {
     Serial.println("Failed to initialize SensorManager.");
+    // Optional: Indicate error with LED
     while (1)
-      ; // Halt execution
+    {
+      digitalWrite(LED_BUILTIN, HIGH);
+      delay(250);
+      digitalWrite(LED_BUILTIN, LOW);
+      delay(250);
+    }
   }
 
   Wire.begin();          // Initialize I2C as master
@@ -62,11 +68,21 @@ void setup()
   if (!sensorManager.beginAll())
   {
     Serial.println("One or more sensors failed to initialize!");
+    while (1)
+    {
+      digitalWrite(LED_BUILTIN, HIGH);
+      delay(500);
+      digitalWrite(LED_BUILTIN, LOW);
+      delay(500);
+    }
   }
   else
   {
     Serial.println("All sensors initialized successfully.");
   }
+
+  // After setup is passed, turn on the built-in LED
+  digitalWrite(LED_BUILTIN, HIGH);
 }
 
 void loop()

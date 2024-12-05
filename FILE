@@ -1,0 +1,136 @@
+Import("env")
+import os
+import serial
+import time
+import re
+from serial.tools import list_ports
+
+# Define color codes for console output
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    OKYELLOW = '\033[93m'
+    OKRED = '\033[91m'
+    ENDC = '\033[0m'    # Resets the color
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+def retrieve_data(source, target, env):
+    print(f"{bcolors.OKCYAN}{'=' * 60}{bcolors.ENDC}")
+    print(f"{bcolors.BOLD}{bcolors.OKCYAN}Starting Data Retrieval from Device...{bcolors.ENDC}")
+    print(f"{bcolors.OKCYAN}{'=' * 60}{bcolors.ENDC}\n")
+
+    # Configuration
+    TEENSY_VID = 0x16C0
+    TEENSY_PID = 0x0483
+    MAX_RETRIES = 10                      # Maximum number of retries to detect the port
+    RETRY_DELAY = 1                       # Seconds to wait between retries
+
+    # Get the upload port from platformio.ini if specified
+    port = env.GetProjectOption("upload_port")
+    if port:
+        print(f"{bcolors.OKGREEN}Using specified upload port: {port}{bcolors.ENDC}")
+    else:
+        # Try to detect the port automatically using VID and PID with retries
+        matching_ports = []
+        for attempt in range(1, MAX_RETRIES + 1):
+            ports = list(serial.tools.list_ports.comports())
+            matching_ports = [p.device for p in ports if p.vid == TEENSY_VID and p.pid == TEENSY_PID]
+            
+            if matching_ports:
+                print(f"{bcolors.OKGREEN}Detected matching serial port(s): {', '.join(matching_ports)}{bcolors.ENDC}")
+                break
+            else:
+                print(f"{bcolors.OKYELLOW}Attempt {attempt}/{MAX_RETRIES}: No matching serial ports found. Retrying in {RETRY_DELAY} second(s)...{bcolors.ENDC}")
+                time.sleep(RETRY_DELAY)
+        else:
+            print(f"{bcolors.OKRED}Failed to detect a matching serial port after {MAX_RETRIES} attempts.{bcolors.ENDC}")
+            return
+        
+        if len(matching_ports) == 1:
+            port = matching_ports[0]
+            print(f"{bcolors.OKGREEN}Auto-detected serial port: {port}{bcolors.ENDC}")
+        else:
+            # Multiple matching ports found
+            print(f"{bcolors.OKYELLOW}Multiple matching serial ports found:{bcolors.ENDC}")
+            for idx, p in enumerate(matching_ports):
+                print(f"{bcolors.OKYELLOW}[{idx}]: {p}{bcolors.ENDC}")
+            # Select the first one or implement logic to choose
+            port = matching_ports[0]
+            print(f"{bcolors.OKGREEN}Using serial port: {port}{bcolors.ENDC}")
+
+    baud_rate = 115200  # Must match the baud rate in your Arduino sketch
+    timeout = 30      # Total time to wait for data (in seconds)
+
+    # Wait a bit for the device to reset after upload
+    print(f"{bcolors.OKCYAN}Waiting for {RETRY_DELAY} second(s) to allow device initialization...{bcolors.ENDC}")
+    time.sleep(RETRY_DELAY)
+
+    # Open serial port
+    try:
+        ser = serial.Serial(port, baud_rate, timeout=1)
+        time.sleep(2)  # Wait for the device to initialize
+        print(f"{bcolors.OKGREEN}Connected to {port} at {baud_rate} baud.{bcolors.ENDC}")
+    except Exception as e:
+        print(f"{bcolors.OKRED}Failed to connect to {port}: {e}{bcolors.ENDC}")
+        return
+
+    # Send the key to the device
+    key = 'START\n'
+    try:
+        ser.write(key.encode('utf-8'))
+        print(f"{bcolors.OKGREEN}Sent key to device: '{key.strip()}'{bcolors.ENDC}")
+    except Exception as e:
+        print(f"{bcolors.OKRED}Failed to send key to device: {e}{bcolors.ENDC}")
+        ser.close()
+        return
+
+    # Read data from serial port
+    data = b''  # Use bytes instead of string
+    start_time = time.time()
+    print(f"{bcolors.OKCYAN}Starting to read data from the device...{bcolors.ENDC}")
+    while True:
+        if time.time() - start_time > timeout:
+            print(f"{bcolors.OKYELLOW}Timeout reached while waiting for data.{bcolors.ENDC}")
+            break
+        try:
+            bytes_to_read = ser.in_waiting
+            if bytes_to_read:
+                chunk = ser.read(bytes_to_read)
+                data += chunk
+                decoded_chunk = chunk.decode('utf-8', errors='replace')
+                print(f"{bcolors.OKBLUE}{decoded_chunk}{bcolors.ENDC}", end='')
+                # Reset the start time since data is still coming
+                start_time = time.time()
+            else:
+                time.sleep(0.1)
+        except Exception as e:
+            print(f"{bcolors.OKRED}Error reading from serial port: {e}{bcolors.ENDC}")
+            break
+
+    # Save data to file if any
+    if data:
+        output_file = os.path.join(env['PROJECT_DIR'], 'retrieved_log.csv')
+        try:
+            with open(output_file, 'wb') as f:
+                f.write(data)
+            print(f"{bcolors.OKGREEN}Data successfully saved to {output_file}{bcolors.ENDC}")
+        except Exception as e:
+            print(f"{bcolors.OKRED}Failed to write data to file: {e}{bcolors.ENDC}")
+    else:
+        print(f"{bcolors.OKYELLOW}No data received to save.{bcolors.ENDC}")
+
+
+    # Close serial port
+    try:
+        ser.close()
+        print(f"{bcolors.OKCYAN}Serial port {port} closed.{bcolors.ENDC}")
+    except Exception as e:
+        print(f"{bcolors.OKRED}Failed to close serial port: {e}{bcolors.ENDC}")
+
+    print(f"{bcolors.OKCYAN}Data retrieval process completed.{bcolors.ENDC}")
+
+# Add the retrieve_data function as a post-action after uploading the program
+env.AddPostAction("upload", retrieve_data)

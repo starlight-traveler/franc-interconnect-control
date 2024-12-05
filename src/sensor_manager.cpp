@@ -60,7 +60,7 @@ void SensorManager::updateAll()
         lastUpdateTime_ = currentTime;
         updateCount_ = 0;
 
-        Serial.println(updateRateHz_);
+        // Serial.println(updateRateHz_);
     }
 }
 
