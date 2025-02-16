@@ -62,7 +62,7 @@ def retrieve_data(source, target, env):
             print(f"{bcolors.OKGREEN}Using serial port: {port}{bcolors.ENDC}")
 
     baud_rate = 115200  # Must match the baud rate in your Arduino sketch
-    timeout = 30      # Total time to wait for data (in seconds)
+    timeout = 60      # Total time to wait for data (in seconds)
 
     # Wait a bit for the device to reset after upload
     print(f"{bcolors.OKCYAN}Waiting for {RETRY_DELAY} second(s) to allow device initialization...{bcolors.ENDC}")

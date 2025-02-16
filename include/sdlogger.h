@@ -15,9 +15,9 @@ public:
     void logMessage(uint8_t *data, size_t size);                     // For FlatBuffers
     void logCSV(const char *csvLine, const char *headers = nullptr); // For CSV logging
     void flush();                                                    // Flush buffer to SD card
+    void fixIncompleteLineInBuffer();
 
-private:
-    uint8_t csPin_;
+    private : uint8_t csPin_;
     String fileName_;
     uint8_t writeBuffer_[WRITE_BUFFER_SIZE];
     size_t bufferIndex_;

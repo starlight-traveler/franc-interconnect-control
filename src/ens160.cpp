@@ -67,28 +67,6 @@ void ENS160Sensor::update()
     }
 }
 
-flatbuffers::Offset<SensorLog::SensorMessage> ENS160Sensor::serialize(flatbuffers::FlatBufferBuilder &builder, unsigned long timestamp) const
-{
-    auto ens160Data = SensorLog::CreateENS160Data(
-        builder,
-        data_.aqi,
-        data_.tvoc,
-        data_.eco2,
-        data_.hp0,
-        data_.hp1,
-        data_.hp2,
-        data_.hp3);
-
-    auto dataOffset = ens160Data.Union();
-
-    return SensorLog::CreateSensorMessage(
-        builder,
-        SensorLog::SensorType_ENS160,
-        timestamp,
-        SensorLog::SensorDataUnion_ENS160Data,
-        dataOffset);
-}
-
 String ENS160Sensor::getName() const
 {
     return "ENS160";

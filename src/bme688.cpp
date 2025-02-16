@@ -49,24 +49,6 @@ void BME688Sensor::update()
 
 }
 
-flatbuffers::Offset<SensorLog::SensorMessage> BME688Sensor::serialize(flatbuffers::FlatBufferBuilder &builder, unsigned long timestamp) const
-{
-    // Create FlatBuffers MPLAltimeterData from the struct
-    auto bme = SensorLog::CreateBME688Data(builder, 0, 0, 0, 0, 0);
-
-    // Get the union offset
-    auto dataOffset = bme.Union();
-
-    // Create the SensorMessage FlatBuffers object
-    return SensorLog::CreateSensorMessage(
-        builder,
-        SensorLog::SensorType_BME688,          // sensor_type
-        timestamp,                               // timestamp
-        SensorLog::SensorDataUnion_BME688Data, // data_type (union type)
-        dataOffset                               // data (union data)
-    );
-}
-
 bool BME688Sensor::hasNewData() const
 {
     return newDataFlag_;

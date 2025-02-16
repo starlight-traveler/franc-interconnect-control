@@ -18,7 +18,6 @@ public:
 
     bool hasNewData() const override;
     void resetNewDataFlag() override;
-    virtual flatbuffers::Offset<SensorLog::SensorMessage> serialize(flatbuffers::FlatBufferBuilder &builder, unsigned long timestamp) const override;
     SensorType getSensorType() const override;
 
 private:

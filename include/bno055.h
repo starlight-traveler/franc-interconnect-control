@@ -22,7 +22,6 @@ public:
     bool hasNewData() const override; // Indicates if there's new data available
     void resetNewDataFlag() override; // Resets the new data flag
     void getData(void *data) const;   // Retrieves the populated struct
-    virtual flatbuffers::Offset<SensorLog::SensorMessage> serialize(flatbuffers::FlatBufferBuilder &builder, unsigned long timestamp) const override;
     SensorType getSensorType() const override; // Implemented method
 
     sensor_t sensor_val;

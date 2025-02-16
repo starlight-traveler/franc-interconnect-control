@@ -26,7 +26,6 @@ public:
     SensorType getSensorType() const override; // Implemented method
 
     void setOversampleRate(uint8_t oversampleRate);
-    virtual flatbuffers::Offset<SensorLog::SensorMessage> serialize(flatbuffers::FlatBufferBuilder &builder, unsigned long timestamp) const override;
 
 private:
     Adafruit_MPL3115A2 mpl;       // MPL3115A2 sensor object

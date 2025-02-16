@@ -27,7 +27,7 @@ void setup()
     Serial.println("SD card initialized.");
 
     // Specify the file to delete
-    const char *filename = "log.csv";
+    const char *filename = "logger.csv";
 
     // Check if the file exists
     if (SD.exists(filename))

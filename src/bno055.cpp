@@ -124,30 +124,6 @@ void BNO055Sensor::update()
     newDataFlag_ = true;
 }
 
-flatbuffers::Offset<SensorLog::SensorMessage> BNO055Sensor::serialize(flatbuffers::FlatBufferBuilder &builder, unsigned long timestamp) const
-{
-    // Create FlatBuffers MPLAltimeterData from the struct
-    auto bno055 = SensorLog::CreateBNO055Data(builder, data_.accel_x, data_.accel_y, data_.accel_z, 
-                                                data_.mag_x, data_.mag_y, data_.mag_z, 
-                                                data_.gyro_x, data_.gyro_y, data_.gyro_z, 
-                                                data_.euler_heading, data_.euler_roll, data_.euler_pitch, 
-                                                data_.linear_accel_x, data_.linear_accel_y, data_.linear_accel_z, 
-                                                data_.gravity_x, data_.gravity_y, data_.gravity_z, 
-                                                0, 0, 0, 0);
-
-    // Get the union offset
-    auto dataOffset = bno055.Union();
-
-    // Create the SensorMessage FlatBuffers object
-    return SensorLog::CreateSensorMessage(
-        builder,
-        SensorLog::SensorType_BNO055,          // sensor_type
-        timestamp,                             // timestamp
-        SensorLog::SensorDataUnion_BNO055Data, // data_type (union type)
-        dataOffset                             // data (union data)
-    );
-}
-
 String BNO055Sensor::getName() const
 {
     return "BNO055";

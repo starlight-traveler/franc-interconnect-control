@@ -43,7 +43,7 @@ void setup()
     Serial.println("Key received. Dumping file...");
 
     // Open the file
-    File dataFile = SD.open("log.csv");
+    File dataFile = SD.open("logger.csv");
 
     if (dataFile)
     {
